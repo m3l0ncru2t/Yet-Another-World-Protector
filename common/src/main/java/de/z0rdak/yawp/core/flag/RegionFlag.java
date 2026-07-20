@@ -49,6 +49,7 @@ public enum RegionFlag {
     NO_WALKER_FREEZE("walker-freeze", FlagTagRegister.PLAYER, FlagTagRegister.BLOCK),
     LEAF_DECAY("leaf-decay", FlagTagRegister.ENVIRONMENT),
     FIRE_TICK("fire-tick", FlagTagRegister.ENVIRONMENT),
+    FIRE_IGNITE("fire-ignite", FlagTagRegister.ENVIRONMENT),
     MELEE_ANIMALS("melee-animals", FlagTagRegister.PLAYER, FlagTagRegister.ENTITY),
     MELEE_MONSTERS("melee-monsters", FlagTagRegister.PLAYER, FlagTagRegister.ENTITY),
     MELEE_PLAYERS("melee-players", FlagTagRegister.PLAYER, FlagTagRegister.ENTITY),

@@ -385,6 +385,8 @@ public class FlagRegister {
             new FlagMetaInfo(Set.of(FlagTagRegister.ENVIRONMENT), FlagFrequency.TICK));
     public static final Flag FIRE_TICK = new Flag(flagId("env/fire_tick"),
             new FlagMetaInfo(Set.of(FlagTagRegister.ENVIRONMENT), FlagFrequency.TICK));
+    public static final Flag FIRE_IGNITE = new Flag(flagId("env/fire_ignite"),
+            new FlagMetaInfo(Set.of(FlagTagRegister.ENVIRONMENT), FlagFrequency.NORMAL));
     public static final Flag NO_ITEM_DESPAWN = new Flag(flagId("item/despawn"),
             new FlagMetaInfo(Set.of(FlagTagRegister.ITEM, FlagTagRegister.PROTECTION), FlagFrequency.NORMAL));
 
@@ -505,6 +507,7 @@ public class FlagRegister {
         registerFlag(LIGHTNING_PROT);
         registerFlag(LEAF_DECAY);
         registerFlag(FIRE_TICK);
+        registerFlag(FIRE_IGNITE);
         registerFlag(MOB_GRIEFING);
         registerFlag(NO_ITEM_DESPAWN);
         registerFlag(SHULKER_TELEPORT);
