@@ -2,8 +2,11 @@ package de.z0rdak.yawp.mixin.flag;
 
 import de.z0rdak.yawp.api.FlagEvaluator;
 import de.z0rdak.yawp.api.events.flag.FlagCheckRequest;
+import de.z0rdak.yawp.config.server.FlagConfig;
 import de.z0rdak.yawp.platform.Services;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.animal.golem.IronGolem;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.Projectile;
@@ -20,7 +23,10 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 
+import java.util.Set;
+
 import static de.z0rdak.yawp.api.MessageSender.sendFlagMsg;
+import static de.z0rdak.yawp.core.flag.RegionFlag.BREAK_BLOCKS;
 import static de.z0rdak.yawp.core.flag.RegionFlag.NO_PVP;
 import static de.z0rdak.yawp.handler.HandlerUtil.getDimKey;
 import static de.z0rdak.yawp.handler.HandlerUtil.isServerSide;
@@ -32,15 +38,46 @@ public class ThrowableProjectileMixin {
     private void onTick(CallbackInfo ci, HitResult hitResult) {
         if (hitResult.getType() == HitResult.Type.ENTITY) {
             EntityHitResult entityHitResult = (EntityHitResult)hitResult;
-            if (isServerSide(entityHitResult.getEntity().level())) {
+            Entity target = entityHitResult.getEntity();
+            if (isServerSide(target.level())) {
                 Projectile projectile = (Projectile) (Object) this;
                 boolean isTypeOf = projectile instanceof Snowball
                         || projectile instanceof ThrownEgg
                         || projectile instanceof ThrownEnderpearl;
                 if (!isTypeOf)
                     return;
-                if (projectile.getOwner() instanceof Player shooter && entityHitResult.getEntity() instanceof IronGolem target) {
+                if (!(projectile.getOwner() instanceof Player shooter))
+                    return;
+
+                if (target instanceof IronGolem) {
                     FlagCheckRequest checkEvent = new FlagCheckRequest(target.blockPosition(), NO_PVP, getDimKey(target.level()), shooter);
+                    if (Services.FLAG_EVENT_DISPATCHER.post(checkEvent)) {
+                        return;
+                    }
+                    FlagEvaluator.processCheck(checkEvent, deny -> {
+                        projectile.remove(Entity.RemovalReason.DISCARDED);
+                        ci.cancel();
+                        sendFlagMsg(deny);
+                    });
+                    return;
+                }
+
+                // Protect covered block-entities (item frames, paintings, armor stands, ...) from being
+                // damaged/broken by thrown projectiles. Mirrors the melee handling in PlayerMixin, using
+                // the same break-blocks flag and covered-entity config lists.
+                Set<String> entityTags = FlagConfig.getCoveredBlockEntityTags();
+                boolean isCoveredByTag = entityTags.stream().anyMatch(entityTag -> {
+                    Identifier tagRl = Identifier.parse(entityTag);
+                    return target.entityTags().contains(tagRl.getPath());
+                });
+                Set<String> entities = FlagConfig.getCoveredBlockEntities();
+                boolean isBlockEntityCovered = entities.stream().anyMatch(entity -> {
+                    Identifier entityRl = Identifier.parse(entity);
+                    Identifier targetRl = EntityType.getKey(target.getType());
+                    return targetRl != null && targetRl.equals(entityRl);
+                });
+                if (isBlockEntityCovered || isCoveredByTag) {
+                    FlagCheckRequest checkEvent = new FlagCheckRequest(target.blockPosition(), BREAK_BLOCKS, getDimKey(target.level()), shooter);
                     if (Services.FLAG_EVENT_DISPATCHER.post(checkEvent)) {
                         return;
                     }
